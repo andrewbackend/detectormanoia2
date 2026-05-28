@@ -1,0 +1,703 @@
+```html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Python | Andrew Torres</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    overflow:hidden;
+    background:black;
+    font-family:Arial;
+}
+
+/* VIDEO */
+
+video{
+    position:absolute;
+    width:100vw;
+    height:100vh;
+    object-fit:cover;
+    transform:scaleX(-1);
+}
+
+canvas{
+    position:absolute;
+    width:100vw;
+    height:100vh;
+    transform:scaleX(-1);
+}
+
+/* TITULO */
+
+#titulo{
+    position:absolute;
+    top:20px;
+    left:20px;
+
+    color:cyan;
+    font-size:24px;
+    font-weight:bold;
+
+    z-index:100;
+
+    text-shadow:
+    0 0 10px cyan,
+    0 0 20px cyan,
+    0 0 40px cyan;
+}
+
+/* PANEL */
+
+#panel{
+    position:absolute;
+    top:90px;
+    left:20px;
+
+    width:420px;
+
+    background:rgba(0,0,0,0.4);
+
+    border:1px solid cyan;
+
+    border-radius:20px;
+
+    padding:20px;
+
+    backdrop-filter:blur(10px);
+
+    z-index:100;
+
+    box-shadow:
+    0 0 20px rgba(0,255,255,0.5);
+}
+
+.info{
+    color:white;
+    font-size:24px;
+    margin-bottom:15px;
+}
+
+/* MENSAJE IA */
+
+#mensaje{
+    color:#00ff99;
+    font-size:22px;
+    font-weight:bold;
+
+    text-shadow:
+    0 0 10px #00ff99;
+}
+
+/* ESCANER */
+
+#linea{
+    position:absolute;
+    width:100%;
+    height:4px;
+
+    background:cyan;
+
+    box-shadow:
+    0 0 20px cyan,
+    0 0 40px cyan;
+
+    animation:scan 3s linear infinite;
+
+    z-index:50;
+}
+
+@keyframes scan{
+
+    0%{
+        top:0%;
+    }
+
+    100%{
+        top:100%;
+    }
+
+}
+
+/* RADAR */
+
+#radar{
+
+    position:absolute;
+
+    right:40px;
+    bottom:40px;
+
+    width:180px;
+    height:180px;
+
+    border-radius:50%;
+    border:2px solid cyan;
+
+    overflow:hidden;
+
+    z-index:100;
+
+    box-shadow:
+    0 0 25px cyan;
+}
+
+#radar::before{
+
+    content:"";
+
+    position:absolute;
+
+    width:50%;
+    height:3px;
+
+    background:cyan;
+
+    top:50%;
+    left:50%;
+
+    transform-origin:left center;
+
+    animation:radar 2s linear infinite;
+}
+
+@keyframes radar{
+
+    from{
+        transform:rotate(0deg);
+    }
+
+    to{
+        transform:rotate(360deg);
+    }
+
+}
+
+/* BOTON APAGADO PEQUEÑO */
+
+#apagado{
+
+    position:absolute;
+
+    top:12px;
+    right:12px;
+
+    width:32px;
+    height:32px;
+
+    border:none;
+
+    border-radius:50%;
+
+    background:rgba(0,0,0,0.4);
+
+    color:rgba(158, 194, 194, 0.5);
+
+    font-size:10px;
+    font-weight:bold;
+
+    cursor:pointer;
+
+    z-index:200;
+
+    border:1px solid rgba(238, 238, 238, 0.2);
+
+    backdrop-filter:blur(4px);
+
+    transition:0.3s;
+}
+
+#apagado:hover{
+
+    color:rgb(90, 97, 97);
+
+    border:1px solid rgb(28, 20, 20);
+
+    box-shadow:
+    0 0 8px rgb(26, 28, 28);
+}
+
+/* PANTALLA NEGRA */
+
+#shutdown{
+
+    position:fixed;
+
+    inset:0;
+
+    background:black;
+
+    display:none;
+
+    justify-content:center;
+    align-items:center;
+
+    color:cyan;
+
+    font-size:40px;
+
+    z-index:999;
+
+    text-shadow:
+    0 0 20px cyan;
+}
+
+/* FOOTER */
+
+#footer{
+
+    position:absolute;
+
+    bottom:15px;
+    left:50%;
+
+    transform:translateX(-50%);
+
+    color:white;
+
+    background:rgba(0,0,0,0.4);
+
+    padding:10px 20px;
+
+    border-radius:15px;
+
+    border:1px solid rgba(0,255,255,0.4);
+
+    backdrop-filter:blur(10px);
+
+    z-index:100;
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="linea"></div>
+
+<div id="titulo">Python Detector IA</div>
+
+<button id="apagado">.</button>
+
+<div id="panel">
+
+    <div class="info" id="dedos">
+        Dedos: 0
+    </div>
+
+    <div class="info" id="estado">
+        Estado: Esperando...
+    </div>
+
+    <div id="mensaje">
+        Iniciando sistema...
+    </div>
+
+</div>
+
+<div id="radar"></div>
+
+<div id="shutdown">
+    SISTEMA APAGADO
+</div>
+
+<footer id="footer">
+    IA Project | 
+    Desarrollado por 
+    <strong style="color:cyan;">
+        Andrew Torres Ramírez
+    </strong> © 2026
+</footer>
+
+<video id="video" autoplay playsinline></video>
+<canvas id="canvas"></canvas>
+
+<!-- MEDIAPIPE -->
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+
+<script>
+
+/* ELEMENTOS */
+
+const video = document.getElementById("video");
+
+const canvas = document.getElementById("canvas");
+
+const ctx = canvas.getContext("2d");
+
+const dedosTexto = document.getElementById("dedos");
+
+const estadoTexto = document.getElementById("estado");
+
+const mensaje = document.getElementById("mensaje");
+
+const apagado = document.getElementById("apagado");
+
+const shutdown = document.getElementById("shutdown");
+
+canvas.width = window.innerWidth;
+
+canvas.height = window.innerHeight;
+
+/* IA VOZ */
+
+function hablar(texto){
+
+    speechSynthesis.cancel();
+
+    const voz = new SpeechSynthesisUtterance(texto);
+
+    voz.lang = "es-ES";
+
+    voz.rate = 0.9;
+
+    voz.pitch = 0.55;
+
+    voz.volume = 1;
+
+    const voces = speechSynthesis.getVoices();
+
+    const vozJarvis =
+
+        voces.find(v =>
+            v.name.includes("Microsoft Pablo")
+        ) ||
+
+        voces.find(v =>
+            v.lang.includes("es")
+        );
+
+    if(vozJarvis){
+        voz.voice = vozJarvis;
+    }
+
+    speechSynthesis.speak(voz);
+}
+
+/* MENSAJE */
+
+function actualizarMensaje(texto){
+
+    mensaje.innerHTML = texto;
+}
+
+/* INICIO */
+
+setTimeout(()=>{
+
+    hablar(
+        "Bienvenido Andrew. Iniciando proceso."
+    );
+
+    actualizarMensaje(
+        "Bienvenido Andrew | Iniciando proceso..."
+    );
+
+},2000);
+
+/* BOTON APAGADO */
+
+apagado.addEventListener("click",()=>{
+
+    hablar(
+        "Hasta luego Señor Andrew. Apagando sistema."
+    );
+
+    actualizarMensaje(
+        "Apagando sistema en 15 segundos..."
+    );
+
+    estadoTexto.innerHTML =
+    "Estado: Cerrando sistema";
+
+    setTimeout(()=>{
+
+        shutdown.style.display = "flex";
+
+        document.body.innerHTML = `
+        <div id="shutdown"
+        style="
+        position:fixed;
+        inset:0;
+        background:black;
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        color:cyan;
+        font-size:40px;
+        font-family:Arial;
+        text-shadow:0 0 20px cyan;
+        ">
+        SISTEMA APAGADO
+        </div>
+        `;
+
+    },15000);
+
+});
+
+/* MEDIAPIPE */
+
+const hands = new Hands({
+
+    locateFile:(file)=>{
+        return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+    }
+
+});
+
+hands.setOptions({
+
+    maxNumHands:1,
+
+    modelComplexity:1,
+
+    minDetectionConfidence:0.75,
+
+    minTrackingConfidence:0.75
+
+});
+
+/* CONTROL */
+
+let ultimoNumero = -1;
+
+/* CONTAR DEDOS */
+
+function contarDedos(landmarks){
+
+    let dedos = 0;
+
+    /* PULGAR */
+
+    if(landmarks[4].x < landmarks[3].x){
+        dedos++;
+    }
+
+    /* INDICE */
+
+    if(landmarks[8].y < landmarks[6].y){
+        dedos++;
+    }
+
+    /* MEDIO */
+
+    if(landmarks[12].y < landmarks[10].y){
+        dedos++;
+    }
+
+    /* ANULAR */
+
+    if(landmarks[16].y < landmarks[14].y){
+        dedos++;
+    }
+
+    /* MEÑIQUE */
+
+    if(landmarks[20].y < landmarks[18].y){
+        dedos++;
+    }
+
+    return dedos;
+}
+
+/* RESULTADOS */
+
+hands.onResults(results=>{
+
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    ctx.drawImage(
+        results.image,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    if(results.multiHandLandmarks.length > 0){
+
+        for(const landmarks of results.multiHandLandmarks){
+
+            drawConnectors(
+                ctx,
+                landmarks,
+                HAND_CONNECTIONS,
+                {
+                    color:"#00FFFF",
+                    lineWidth:4
+                }
+            );
+
+            drawLandmarks(
+                ctx,
+                landmarks,
+                {
+                    color:"#FF0000",
+                    radius:5
+                }
+            );
+
+            const dedos = contarDedos(landmarks);
+
+            dedosTexto.innerHTML =
+            "Dedos detectados: " + dedos;
+
+            /* IA */
+
+            if(dedos !== ultimoNumero){
+
+                ultimoNumero = dedos;
+
+                /* PUÑO */
+
+                if(dedos === 0){
+
+                    estadoTexto.innerHTML =
+                    "Estado: Puño cerrado";
+
+                    actualizarMensaje(
+                        "Modo defensa activado"
+                    );
+
+                    hablar(
+                        "Puño detectado"
+                    );
+                }
+
+                /* 1 DEDO */
+
+                if(dedos === 1){
+
+                    estadoTexto.innerHTML =
+                    "Estado: Un dedo";
+
+                    actualizarMensaje(
+                        "Detectando un dedo"
+                    );
+
+                    hablar(
+                        "Detecto un dedo"
+                    );
+                }
+
+                /* 2 DEDOS */
+
+                if(dedos === 2){
+
+                    estadoTexto.innerHTML =
+                    "Estado: Dos dedos";
+
+                    actualizarMensaje(
+                        "Detectando dos dedos"
+                    );
+
+                    hablar(
+                        "Detecto dos dedos"
+                    );
+                }
+
+                /* 3 DEDOS */
+
+                if(dedos === 3){
+
+                    estadoTexto.innerHTML =
+                    "Estado: Tres dedos";
+
+                    actualizarMensaje(
+                        "Detectando tres dedos"
+                    );
+
+                    hablar(
+                        "Detecto tres dedos"
+                    );
+                }
+
+                /* 4 DEDOS */
+
+                if(dedos === 4){
+
+                    estadoTexto.innerHTML =
+                    "Estado: Cuatro dedos";
+
+                    actualizarMensaje(
+                        "Detectando cuatro dedos"
+                    );
+
+                    hablar(
+                        "Detecto cuatro dedos"
+                    );
+                }
+
+                /* 5 DEDOS */
+
+                if(dedos === 5){
+
+                    estadoTexto.innerHTML =
+                    "Estado: Mano completa";
+
+                    actualizarMensaje(
+                        "Sistema completo activado"
+                    );
+
+                    hablar(
+                        "Detecto cinco dedos"
+                    );
+                }
+
+            }
+
+        }
+
+    }else{
+
+        dedosTexto.innerHTML =
+        "No se detecta mano";
+
+    }
+
+});
+
+/* CAMARA */
+
+const camera = new Camera(video,{
+
+    onFrame: async()=>{
+
+        await hands.send({
+            image:video
+        });
+
+    },
+
+    width:1280,
+    height:720
+
+});
+
+camera.start();
+
+/* ACTIVAR VOCES */
+
+speechSynthesis.onvoiceschanged = ()=>{};
+
+</script>
+
+</body>
+</html>
+```

@@ -1,0 +1,571 @@
+```html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>JARVIS AI | Andrew Torres</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    overflow:hidden;
+    background:black;
+    font-family:Arial;
+}
+
+/* VIDEO */
+
+video{
+    position:absolute;
+    width:100vw;
+    height:100vh;
+    object-fit:cover;
+    transform:scaleX(-1);
+}
+
+canvas{
+    position:absolute;
+    width:100vw;
+    height:100vh;
+    transform:scaleX(-1);
+}
+
+/* TITULO */
+
+#titulo{
+    position:absolute;
+    top:20px;
+    left:20px;
+
+    color:cyan;
+    font-size:38px;
+    font-weight:bold;
+
+    z-index:100;
+
+    text-shadow:
+    0 0 10px cyan,
+    0 0 20px cyan,
+    0 0 40px cyan;
+}
+
+/* PANEL */
+
+#panel{
+    position:absolute;
+    top:90px;
+    left:20px;
+
+    width:400px;
+
+    background:rgba(0,0,0,0.4);
+
+    border:1px solid cyan;
+
+    border-radius:20px;
+
+    padding:20px;
+
+    backdrop-filter:blur(10px);
+
+    z-index:100;
+
+    box-shadow:
+    0 0 20px rgba(0,255,255,0.5);
+}
+
+.info{
+    color:white;
+    font-size:24px;
+    margin-bottom:15px;
+}
+
+/* MENSAJE IA */
+
+#mensaje{
+    color:#00ff99;
+    font-size:22px;
+    font-weight:bold;
+
+    text-shadow:
+    0 0 10px #00ff99;
+}
+
+/* ESCANER */
+
+#linea{
+    position:absolute;
+    width:100%;
+    height:4px;
+
+    background:cyan;
+
+    box-shadow:
+    0 0 20px cyan,
+    0 0 40px cyan;
+
+    animation:scan 3s linear infinite;
+
+    z-index:50;
+}
+
+@keyframes scan{
+
+    0%{
+        top:0%;
+    }
+
+    100%{
+        top:100%;
+    }
+
+}
+
+/* RADAR */
+
+#radar{
+
+    position:absolute;
+
+    right:40px;
+    bottom:40px;
+
+    width:180px;
+    height:180px;
+
+    border-radius:50%;
+    border:2px solid cyan;
+
+    overflow:hidden;
+
+    z-index:100;
+
+    box-shadow:
+    0 0 25px cyan;
+}
+
+#radar::before{
+
+    content:"";
+
+    position:absolute;
+
+    width:50%;
+    height:3px;
+
+    background:cyan;
+
+    top:50%;
+    left:50%;
+
+    transform-origin:left center;
+
+    animation:radar 2s linear infinite;
+}
+
+@keyframes radar{
+
+    from{
+        transform:rotate(0deg);
+    }
+
+    to{
+        transform:rotate(360deg);
+    }
+
+}
+
+/* FOOTER */
+
+#footer{
+
+    position:absolute;
+
+    bottom:15px;
+    left:50%;
+
+    transform:translateX(-50%);
+
+    color:white;
+
+    background:rgba(0,0,0,0.4);
+
+    padding:10px 20px;
+
+    border-radius:15px;
+
+    border:1px solid rgba(0,255,255,0.4);
+
+    backdrop-filter:blur(10px);
+
+    z-index:100;
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="linea"></div>
+
+<div id="titulo">JARVIS AI</div>
+
+<div id="panel">
+
+    <div class="info" id="dedos">
+        Dedos: 0
+    </div>
+
+    <div class="info" id="estado">
+        Estado: Esperando...
+    </div>
+
+    <div id="mensaje">
+        Sistema iniciado...
+    </div>
+
+</div>
+
+<div id="radar"></div>
+
+<footer id="footer">
+    IA Project | 
+    Desarrollado por 
+    <strong style="color:cyan;">
+        Andrew Torres Ramírez
+    </strong> © 2026
+</footer>
+
+<video id="video" autoplay playsinline></video>
+<canvas id="canvas"></canvas>
+
+<!-- MEDIAPIPE -->
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+
+<script>
+
+/* ELEMENTOS */
+
+const video = document.getElementById("video");
+
+const canvas = document.getElementById("canvas");
+
+const ctx = canvas.getContext("2d");
+
+const dedosTexto = document.getElementById("dedos");
+
+const estadoTexto = document.getElementById("estado");
+
+const mensaje = document.getElementById("mensaje");
+
+canvas.width = window.innerWidth;
+
+canvas.height = window.innerHeight;
+
+/* IA VOZ */
+
+function hablar(texto){
+
+    speechSynthesis.cancel();
+
+    const voz = new SpeechSynthesisUtterance(texto);
+
+    voz.lang = "en-US";
+
+    voz.rate = 0.92;
+
+    voz.pitch = 0.55;
+
+    voz.volume = 1;
+
+    // Intentar voz masculina estilo Jarvis
+    const voces = speechSynthesis.getVoices();
+
+    const vozJarvis =
+        voces.find(v =>
+            v.name.includes("Google UK English Male")
+        ) ||
+
+        voces.find(v =>
+            v.name.includes("Microsoft David")
+        ) ||
+
+        voces.find(v =>
+            v.lang.includes("en")
+        );
+
+    if(vozJarvis){
+        voz.voice = vozJarvis;
+    }
+
+    speechSynthesis.speak(voz);
+}
+
+/* MENSAJE */
+
+function actualizarMensaje(texto){
+
+    mensaje.innerHTML = texto;
+}
+
+/* INICIO */
+
+setTimeout(()=>{
+
+    hablar("System online. Welcome Andrew.");
+
+    actualizarMensaje("Sistema conectado correctamente");
+
+},2000);
+
+/* MEDIAPIPE */
+
+const hands = new Hands({
+
+    locateFile:(file)=>{
+        return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+    }
+
+});
+
+hands.setOptions({
+
+    maxNumHands:1,
+
+    modelComplexity:1,
+
+    minDetectionConfidence:0.75,
+
+    minTrackingConfidence:0.75
+
+});
+
+/* CONTROL */
+
+let ultimoNumero = -1;
+
+/* CONTAR DEDOS CORRECTAMENTE */
+
+function contarDedos(landmarks){
+
+    let dedos = 0;
+
+    /* PULGAR */
+
+    if(landmarks[4].x < landmarks[3].x){
+        dedos++;
+    }
+
+    /* INDICE */
+
+    if(landmarks[8].y < landmarks[6].y){
+        dedos++;
+    }
+
+    /* MEDIO */
+
+    if(landmarks[12].y < landmarks[10].y){
+        dedos++;
+    }
+
+    /* ANULAR */
+
+    if(landmarks[16].y < landmarks[14].y){
+        dedos++;
+    }
+
+    /* MEÑIQUE */
+
+    if(landmarks[20].y < landmarks[18].y){
+        dedos++;
+    }
+
+    return dedos;
+}
+
+/* RESULTADOS */
+
+hands.onResults(results=>{
+
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    ctx.drawImage(
+        results.image,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    if(results.multiHandLandmarks.length > 0){
+
+        for(const landmarks of results.multiHandLandmarks){
+
+            drawConnectors(
+                ctx,
+                landmarks,
+                HAND_CONNECTIONS,
+                {
+                    color:"#00FFFF",
+                    lineWidth:4
+                }
+            );
+
+            drawLandmarks(
+                ctx,
+                landmarks,
+                {
+                    color:"#FF0000",
+                    radius:5
+                }
+            );
+
+            const dedos = contarDedos(landmarks);
+
+            dedosTexto.innerHTML =
+            "Dedos detectados: " + dedos;
+
+            /* IA */
+
+            if(dedos !== ultimoNumero){
+
+                ultimoNumero = dedos;
+
+                if(dedos === 0){
+
+                    estadoTexto.innerHTML =
+                    "Estado: Puño cerrado";
+
+                    actualizarMensaje(
+                        "Modo defensa activado"
+                    );
+
+                    hablar(
+                        "Defense mode activated"
+                    );
+                }
+
+                if(dedos === 1){
+
+                    estadoTexto.innerHTML =
+                    "Estado: Un dedo";
+
+                    actualizarMensaje(
+                        "Objetivo detectado"
+                    );
+
+                    hablar(
+                        "One finger detected"
+                    );
+                }
+
+                if(dedos === 2){
+
+                    estadoTexto.innerHTML =
+                    "Estado: Dos dedos";
+
+                    actualizarMensaje(
+                        "Peace mode activated"
+                    );
+
+                    hablar(
+                        "Peace mode activated"
+                    );
+                }
+
+                if(dedos === 3){
+
+                    estadoTexto.innerHTML =
+                    "Estado: Tres dedos";
+
+                    actualizarMensaje(
+                        "Scanning environment"
+                    );
+
+                    hablar(
+                        "Scanning environment"
+                    );
+                }
+
+                if(dedos === 4){
+
+                    estadoTexto.innerHTML =
+                    "Estado: Cuatro dedos";
+
+                    actualizarMensaje(
+                        "System monitoring active"
+                    );
+
+                    hablar(
+                        "Monitoring systems"
+                    );
+                }
+
+                if(dedos === 5){
+
+                    estadoTexto.innerHTML =
+                    "Estado: Mano completa";
+
+                    actualizarMensaje(
+                        "Bienvenido señor Andrew"
+                    );
+
+                    hablar(
+                        "Welcome back mister Andrew"
+                    );
+                }
+
+            }
+
+        }
+
+    }else{
+
+        dedosTexto.innerHTML =
+        "No se detecta mano";
+
+    }
+
+});
+
+/* CAMARA */
+
+const camera = new Camera(video,{
+
+    onFrame: async()=>{
+
+        await hands.send({
+            image:video
+        });
+
+    },
+
+    width:1280,
+    height:720
+
+});
+
+camera.start();
+
+/* ACTIVAR VOCES */
+
+speechSynthesis.onvoiceschanged = ()=>{};
+
+</script>
+
+</body>
+</html>
+```
